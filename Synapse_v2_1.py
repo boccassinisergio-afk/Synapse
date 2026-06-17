@@ -8,7 +8,18 @@ FIELDNAMES = ["id", "categoria", "argomento", "livello", "stato", "note"]
 
 
 class SynapseEntry:
-    def __init__(self, id, categoria, argomento, livello, stato, note=""):
+
+    """Represents a single knowledge entry in the Synapse tracker.
+
+    Attributes:
+        categoria (str): The knowledge category (e.g. 'python', 'linux').
+        argomento (str): The specific topic within the category.
+        livello (str): The proficiency level (e.g. 'base', 'intermedio').
+        stato (str): The learning status (e.g. 'in corso', 'completato').
+        note (str): Optional notes about the entry.
+    """
+
+    def __init__(self, id: int | str, categoria: str, argomento: str, livello: str, stato: str, note: str = "") -> None:
         self._id = int(id)
         self.categoria = categoria
         self.argomento = argomento
@@ -17,11 +28,21 @@ class SynapseEntry:
         self.note = note
 
     @property
-    def id(self):
+    def id(self) -> int:
         return self._id
 
     @classmethod
-    def from_dict(cls, row):
+    def from_dict(cls, row: dict[str, str]) -> "SynapseEntry":
+        
+        """Create a SynapseEntry instance from a CSV row dictionary.
+
+        Args:
+            row (dict): A dictionary with keys matching FIELDNAMES.
+
+        Returns:
+            SynapseEntry: A new instance populated with row data.
+        """
+
         return cls(
             id=row["id"],
             categoria=row["categoria"],
@@ -31,7 +52,14 @@ class SynapseEntry:
             note=row["note"],
         )
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, str | int]:
+
+        """Serialize the entry to a dictionary compatible with csv.DictWriter.
+
+        Returns:
+            dict: A dictionary mapping all field names to their current values.
+        """
+
         return {
             "id": self.id,
             "categoria": self.categoria,
@@ -41,7 +69,10 @@ class SynapseEntry:
             "note": self.note,
         }
 
-    def __str__(self):
+    def __str__(self) -> str:
+
+        """Return a formatted single-line string representation of the entry."""
+
         return (
             f"ID: {self.id} | "
             f"Categoria: {self.categoria} | "
@@ -52,8 +83,13 @@ class SynapseEntry:
         )
 
 
-def main():
+def main() -> None:
+
+    """Run the Synapse CLI loop: initialize storage and dispatch user actions."""
+
     initialize()
+
+    """Create the CSV file with headers if it does not already exist."""
 
     while True:
         print("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
@@ -75,14 +111,17 @@ def main():
             print("Scelta non valida.")
 
 
-def initialize():
+def initialize() -> None:
     if not os.path.exists(FILE_NAME):
         with open(FILE_NAME, "w", newline="") as file:
             writer = csv.DictWriter(file, fieldnames=FIELDNAMES)
             writer.writeheader()
 
 
-def add_value():
+def add_value() -> None:
+
+    """Prompt the user for all entry fields and append a new entry to the CSV file."""
+
     entry = SynapseEntry(
         id=auto_id(),
         categoria=input("Categoria: ").lower().strip(),
@@ -99,7 +138,10 @@ def add_value():
     print("\n✓ Synapse -- Valore aggiunto con successo.")
 
 
-def view_report():
+def view_report() -> None:
+
+    """Display all entries, with optional keyword filtering across all non-ID fields."""
+
     with open(FILE_NAME) as file:
         reader = csv.DictReader(file)
 
@@ -117,7 +159,10 @@ def view_report():
                     print(entry)
 
 
-def update_value():
+def update_value() -> None:
+
+    """Find an entry by ID and overwrite one of its fields with a new value."""
+
     target = input("Quale ID vuoi modificare? ").strip()
     updated_rows = []
     found = False
@@ -146,7 +191,10 @@ def update_value():
     print("\n✓ Synapse -- Aggiornamento completato.")
 
 
-def delete_value():
+def delete_value() -> None:
+
+    """Remove an entry from the CSV file by its ID, rewriting the file without it."""
+
     target = input("Quale ID vuoi eliminare? ").strip()
     remaining_rows = []
     found = False
@@ -172,7 +220,14 @@ def delete_value():
     print("\n✓ Synapse -- Valore eliminato.")
 
 
-def auto_id():
+def auto_id() -> int:
+
+    """Generate the next available integer ID based on existing entries.
+
+    Returns:
+        int: The highest existing ID plus one, or 1 if the file is empty.
+    """
+
     with open(FILE_NAME, "r") as file:
         reader = csv.DictReader(file)
         ids = [int(row["id"]) for row in reader if row["id"].isdigit()]
